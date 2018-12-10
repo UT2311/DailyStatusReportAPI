@@ -10,12 +10,12 @@ function userServices()
         if( userName && password ) {
             
             if(password.length<6){
-                return  ErrorObj.sendErrorResponse(406 ,"Password should be more then 6 character long");
+                res.send(ErrorObj.sendErrorResponse(406 ,"Password should be more then 6 character long"));
             }
             UserORMServices.signup(req,res);
         }
         else{
-            return ErrorObj.sendErrorResponse(406 ,"Username/Password not provided");
+            res.send(ErrorObj.sendErrorResponse(406 ,"Username/Password not provided"));
         }
     }
 }
