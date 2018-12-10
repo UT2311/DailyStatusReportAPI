@@ -10,5 +10,5 @@ router.post("/signup",apiController.signup);
 
 // Api With Middlewares
 router.post("/getAllApplications",userAuthenticator,requestController.getAllApplication);
-
+router.post("/insertApplication",userAuthenticator,requestController.insertApplication);
 module.exports = router;

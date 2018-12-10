@@ -8,6 +8,9 @@ function userORMServices()
     this.signup = function(req,res){
         userModel.signup(req,res);
     }
+    this.insertApplication = function(req,res){
+        userModel.insertApplication(req,res);
+    }
 }
 
 
