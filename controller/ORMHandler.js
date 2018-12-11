@@ -47,6 +47,30 @@ function userORMServices()
             .catch(error => {reject(error)})
         });
     }
+    this.deleteAT = function(assistiveTechnologyID){
+        return new Promise(function(resolve,reject){
+            var deleteATStatus = applicationFunctions.deleteAT(assistiveTechnologyID);
+            deleteATStatus
+            .then(response => {resolve(response)})
+            .catch(error => {reject(error)})
+        });
+    }
+    this.updateAT = function(assistiveTechnologyID,assistiveTechnology){
+        return new Promise(function(resolve,reject){
+            var updateATStatus = applicationFunctions.updateAT(assistiveTechnologyID,assistiveTechnology);
+            updateATStatus
+            .then(response => {resolve(response)})
+            .catch(error => {reject(error)})
+        });
+    }
+    this.insertAT = function(assistiveTechnology){
+        return new Promise(function(resolve,reject){
+            var insertATStatus = applicationFunctions.insertAT(assistiveTechnology);
+            insertATStatus
+            .then(response => {resolve(response)})
+            .catch(error => {reject(error)})
+        });
+    }
 }
 
 

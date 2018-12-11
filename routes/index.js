@@ -11,4 +11,5 @@ router.post("/signup",apiController.signup);
 // Api With Middlewares
 router.get("/getAllApplications",userAuthenticator,requestController.getAllApplication);
 router.post("/insertDeleteUpdateApplication",userAuthenticator,requestController.insertApplication);
+router.post("/insertDeleteUpdateAssistiveTechnology",userAuthenticator,requestController.insertDeleteUpdateATS);
 module.exports = router;

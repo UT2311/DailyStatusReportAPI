@@ -72,6 +72,47 @@ function userServices()
             res.send(ErrorObj.sendErrorResponse(404,"Please Provide An Correct Operation-- 0-Update,1-Insert,-1-Delete"));
         }
     }
+    this.insertDeleteUpdateATS = function(req,res){
+        var assistiveTechnology = req.body.AssistiveTechnology;
+        var assistiveTechnologyID = req.body.AIID;
+        var operations = req.body.options;
+        if(operations == -1){
+            if(assistiveTechnologyID){
+                var deleteStatus = UserORMServices.deleteAT(assistiveTechnologyID);
+                deleteStatus
+                .then(response => {res.status(200).send(response)})
+                .catch(error => {res.status(400).send(error)})
+            }
+            else
+             res.send(ErrorObj.sendErrorResponse(404,"Please Provide An ID for Assistive Technology Deletion"));
+        }
+        else if(operations == 0){
+            if(assistiveTechnologyID){
+                if(assistiveTechnology){
+                    var updateStatus = UserORMServices.updateAT(assistiveTechnologyID,assistiveTechnology);
+                    updateStatus
+                    .then(response => {res.status(200).send(response)})
+                    .catch(error => {res.status(400).send(error)})
+                }
+                else
+                  res.send(ErrorObj.sendErrorResponse(404,"Please Provide An Assistive Technology Updation"));
+            }
+            else
+             res.send(ErrorObj.sendErrorResponse(404,"Please Provide An ID for Assistive Technology ID for Updation"));
+        }
+        else if(operations == 1){
+            if(assistiveTechnology){
+                var insertStatus = UserORMServices.insertAT(assistiveTechnology);
+                insertStatus
+                .then(response => {res.status(200).send(response)})
+                .catch(error => {res.status(400).send(error)})
+            }
+            else
+              res.send(ErrorObj.sendErrorResponse(404,"Please Provide An Assistive Technology Insertion"));
+        }
+        else
+             res.send(ErrorObj.sendErrorResponse(404,"Please Provide Operation to do -- 0-Update 1-Insert -1-Delete"));
+    }
 }
 var userObj = new userServices();
 module.exports = userObj;

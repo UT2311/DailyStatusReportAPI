@@ -1,7 +1,7 @@
 var request = require("request");
 var ErrorObj = require('../controller/ErrorHandler');
 var jwt = require('jsonwebtoken');
-
+//Database Initilisation
 function initialise()
 {
     var db = require('../controller/db').getDb().db();
@@ -13,6 +13,8 @@ function initialise()
             reject(err);
     })
 }
+
+//Application Functions
 function createCounter(database,counterID)
 {
     return new Promise(function(resolve, reject) {
@@ -131,6 +133,53 @@ function updateApplication(database,AppID,ApplicationName,applicationSize){
         .catch(error => {reject(error)})
     });
 }
+function deleteAT(database,assistiveTechnologyID){
+    return new Promise(function(resolve,reject){
+        var collection = database.collection("assistivetech");
+        AppID = parseInt(assistiveTechnologyID);
+        collection.deleteOne(
+            {_id:AppID}
+        )
+        .then(result=>{resolve(result);})
+        .catch(error => {reject(error)})
+    });
+}
+function updateAT(database,assistiveTechnologyID,assistiveTechnology){
+    return new Promise(function(resolve,reject){
+        var collection = database.collection("assistivetech");
+        AppID = parseInt(assistiveTechnologyID);
+        collection.findOneAndUpdate(
+            {_id:AppID},
+            {
+                $set:{
+                    assistiveTechName:assistiveTechnology
+                }
+            },
+            {
+                returnNewDocument: true
+            }
+        )
+        .then(result=>{resolve(result);})
+        .catch(error => {reject(error)})
+    });
+}
+function insertAT(database,sequenceID,assistiveTechnology){
+    return new Promise(function(resolve,reject){
+
+        var collection = database.collection("assistivetech");
+        AppID = parseInt(sequenceID);
+        collection.insertOne(
+           {
+                _id:AppID,
+                assistiveTechName:assistiveTechnology
+           }
+        )
+        .then(result=>{resolve(result);})
+        .catch(error => {reject(error)})
+    });
+}
+
+//Application Handler
 function applicationHandler()
 {
     this.insertApplication = function(req,res){
@@ -203,7 +252,65 @@ function applicationHandler()
             .catch(err =>{reject(ErrorObj.sendErrorResponse(500,"Cannot Initialise DB error --"+err));})
         });
     }
+    this.deleteAT = function(assistiveTechnologyID){
+        return new Promise(function(resolve,reject){
+            var getdb = initialise();
+            getdb
+            .then(database => {
+                var deleteATStatus = deleteAT(database,assistiveTechnologyID);
+                deleteATStatus
+                .then(response => {resolve(ErrorObj.sendSuccessResponse(200,"AT deleted",response))})
+                .catch(error =>{reject(ErrorObj.sendErrorResponse(200,"AT Cannot Be Deleted",error))})
+            })
+            .catch(err =>{reject(ErrorObj.sendErrorResponse(500,"Cannot Initialise DB error --"+err));})
+        });
+    }
+    this.updateAT = function(assistiveTechnologyID,assistiveTechnology){
+        return new Promise(function(resolve,reject){
+            var getdb = initialise();
+            getdb
+            .then(database => {
+                var updateATStatus = updateAT(database,assistiveTechnologyID,assistiveTechnology);
+                updateATStatus
+                .then(response => {resolve(ErrorObj.sendSuccessResponse(200,"AT Updated",response))})
+                .catch(error =>{reject(ErrorObj.sendErrorResponse(200,"AT Cannot Be Updated",error))})
+            })
+            .catch(err =>{reject(ErrorObj.sendErrorResponse(500,"Cannot Initialise DB error --"+err));})
+        });
+    }
+    this.insertAT = function(assistiveTechnology){
+        return new Promise(function(resolve,reject){
+            var getdb = initialise();
+            getdb
+            .then(database => {
+                var counterInitialise = makeCounterIfUnavalable(database,"assistivetech");
+                    counterInitialise
+                    .then(respose => {
+                        var sequenceID = getNextSequenceValue(database,"assistivetech");
+                        sequenceID
+                        .then(sequenceDoc => {
+                            var getSavedStatus = insertAT(database,(sequenceDoc.value.count+1),assistiveTechnology);
+                            getSavedStatus
+                            .then(savedResponse => {resolve(ErrorObj.sendSuccessResponse(200,"AT Saved Successfully",savedResponse.insertedId))})
+                            .catch(errorResponse => {
+                                var counterResetStatus = resetSequenceValue(database,"assistivetech");
+                                counterResetStatus
+                                .then(response => {reject(ErrorObj.sendErrorResponse(400,"AT Failed To Save "+errorResponse))})
+                                .catch(error => {reject(ErrorObj.sendErrorResponse(400,"AT Failed To Save & Counter Failed to decrement "+errorResponse))})
+                                })
+                        })
+                        .catch(err => {reject(ErrorObj.sendErrorResponse(400,"Cannot insert the application error is ---"+err));})
+                    })
+                    .catch(err => {reject(ErrorObj.sendErrorResponse(400,"Cannot make counter for the perticular application error--"+err));})
+            })
+            .catch(err =>{reject(ErrorObj.sendErrorResponse(500,"Cannot Initialise DB error --"+err));})
+        });
+    }
 }
+
+
+
+//User Functions
 function getPerticularUserDetails(database,userName)
 {
     return new Promise(function(resolve,reject){
@@ -235,6 +342,8 @@ function createUser(database,userName,Password){
         .catch(error => {reject(error)})
     });
 }
+
+//User Handler
 function userTable()
 {
     const createToken = () => {
