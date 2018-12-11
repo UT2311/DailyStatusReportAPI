@@ -23,6 +23,22 @@ function userORMServices()
             .catch(error => {reject(error)})
         });
     }
+    this.deleteApplication = function(AppID){
+        return new Promise(function(resolve,reject){
+            var deleteAppStatus = applicationFunctions.deleteApplication(AppID);
+            deleteAppStatus
+            .then(response => {resolve(response)})
+            .catch(error => {reject(error)})
+        });
+    }
+    this.updateApplication = function(AppID,applicationName,applicationSize){
+        return new Promise(function(resolve,reject){
+            var updateAppStatus = applicationFunctions.updateApplication(AppID,applicationName,applicationSize);
+            updateAppStatus
+            .then(response => {resolve(response)})
+            .catch(error => {reject(error)})
+        });
+    }
     this.getAllApplication = function(){
         return new Promise(function(resolve,reject){
             var allApps = applicationFunctions.getAllApplication();

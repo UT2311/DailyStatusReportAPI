@@ -55,6 +55,18 @@ function getNextSequenceValue(database,sequenceName){
         .catch(error => {reject(error)})
     });
 }
+function resetSequenceValue(database,sequenceName){
+    return new Promise(function(resolve,reject){
+        var collection = database.collection("counter");
+        collection.findOneAndUpdate(
+            { _id :  sequenceName},
+            { $inc:{count:-1} },
+            { returnNewDocument: true }
+        )
+        .then(result=>{resolve(result);})
+        .catch(error => {reject(error)})
+    });
+}
 function saveApplication(database,ApplicationName,ApplicationSize,sequenceID)
 {
     return new Promise(function(resolve,reject){
@@ -86,25 +98,63 @@ function getAllApplications(database){
     //     sizeOfApplication:1
     // }
 }
+function deleteApplication(database,AppID){
+    return new Promise(function(resolve,reject){
+        AppID = parseInt(AppID);
+        var collection = database.collection("applications");
+        collection.deleteOne(
+            {
+                _id:AppID,
+            }
+        )
+        .then(result=>{resolve(result);})
+        .catch(error => {reject(error)})
+    });
+}
+function updateApplication(database,AppID,ApplicationName,applicationSize){
+    return new Promise(function(resolve,reject){
+        var collection = database.collection("applications");
+        AppID = parseInt(AppID);
+        collection.findOneAndUpdate(
+            {_id:AppID},
+            {
+                $set:{
+                    appicationName: ApplicationName,
+                    sizeOfApplication:applicationSize
+                }
+            },
+            {
+                returnNewDocument: true
+            }
+        )
+        .then(result=>{resolve(result);})
+        .catch(error => {reject(error)})
+    });
+}
 function applicationHandler()
 {
     this.insertApplication = function(req,res){
         return new Promise(function(resolve,reject){
             var getdb = initialise();
             getdb
-            .then(result => {
+            .then(database => {
                     var applicationName = req.body.ApplicationName;
                     var applicationSize = req.body.ApplicationSize;  
-                    var counterInitialise = makeCounterIfUnavalable(result,"applications_id");
+                    var counterInitialise = makeCounterIfUnavalable(database,"applications_id");
                     counterInitialise
                     .then(respose => {
-                        var sequenceID = getNextSequenceValue(result,"applications_id");
+                        var sequenceID = getNextSequenceValue(database,"applications_id");
                         sequenceID
                         .then(sequenceDoc => {
-                            var getSavedStatus = saveApplication(result,applicationName,applicationSize,(sequenceDoc.value.count+1));
+                            var getSavedStatus = saveApplication(database,applicationName,applicationSize,(sequenceDoc.value.count+1));
                             getSavedStatus
                             .then(savedResponse => {resolve(ErrorObj.sendSuccessResponse(200,"Application Saved Successfully",savedResponse.insertedId))})
-                            .catch(errorResponse => {reject(ErrorObj.sendErrorResponse(200,"Application Failed To Save "+errorResponse))})
+                            .catch(errorResponse => {
+                                var counterResetStatus = resetSequenceValue(database,"applications_id");
+                                counterResetStatus
+                                .then(response => {reject(ErrorObj.sendErrorResponse(400,"Application Failed To Save "+response.value.count))})
+                                .catch(error => {reject(ErrorObj.sendErrorResponse(400,"Application Failed To Save & Counter Failed to decrement "+response))})
+                                })
                         })
                         .catch(err => {reject(ErrorObj.sendErrorResponse(400,"Cannot insert the application error is ---"+err));})
                     })
@@ -123,6 +173,32 @@ function applicationHandler()
                     allApps
                     .then(respose => {resolve(ErrorObj.sendSuccessResponse(200,"Application List Successfully Fetched",respose))})
                     .catch(error =>{reject(ErrorObj.sendErrorResponse(500,"Some Problem Fetching Applications error is-"+error))})
+            })
+            .catch(err =>{reject(ErrorObj.sendErrorResponse(500,"Cannot Initialise DB error --"+err));})
+        });
+    }
+    this.deleteApplication = function(AppID){
+        return new Promise(function(resolve,reject){
+            var getdb = initialise();
+            getdb
+            .then(database => {
+                var deleteStatus = deleteApplication(database,AppID);
+                deleteStatus
+                .then(response => {resolve(ErrorObj.sendSuccessResponse(200,"Application Successfully Deleted",response))})
+                .catch(error =>{reject(ErrorObj.sendErrorResponse(400,"Application Cannot Be Deleted "+error))})
+            })
+            .catch(err =>{reject(ErrorObj.sendErrorResponse(500,"Cannot Initialise DB error --"+err));})
+        });
+    }
+    this.updateApplication = function(AppID,applicationName,applicationSize){
+        return new Promise(function(resolve,reject){
+            var getdb = initialise();
+            getdb
+            .then(database => {
+                var updateStatus = updateApplication(database,AppID,applicationName,applicationSize);
+                updateStatus
+                .then(response => {resolve(ErrorObj.sendSuccessResponse(200,"Application Updated",response))})
+                .catch(error =>{reject(ErrorObj.sendErrorResponse(200,"Application Cannot Be Updated",error))})
             })
             .catch(err =>{reject(ErrorObj.sendErrorResponse(500,"Cannot Initialise DB error --"+err));})
         });

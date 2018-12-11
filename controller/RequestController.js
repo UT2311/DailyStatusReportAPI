@@ -13,18 +13,63 @@ function userServices()
     this.insertApplication = function(req,res){
         var applicationName = req.body.ApplicationName;
         var applicationSize = req.body.ApplicationSize;
-        if(applicationName){
-            if(applicationSize){
-                var appInsertStatus = UserORMServices.insertApplication(req,res);
-                appInsertStatus
-                .then(response => {res.status(200).send(response)})
-                .catch(error => {res.status(400).send(error)})
+        var AppID = req.body.AppID;
+        var operation = req.body.operation;
+        if(operation == 1)
+        {
+            //insert
+            if(applicationName){
+                if(applicationSize){
+                    var appInsertStatus = UserORMServices.insertApplication(req,res);
+                    appInsertStatus
+                    .then(response => {res.status(200).send(response)})
+                    .catch(error => {res.status(400).send(error)})
+                }
+                else
+                   res.send(ErrorObj.sendErrorResponse(404,"Application Size not found"));
             }
-            else
-               res.send(ErrorObj.sendErrorResponse(404,"Application Size not found"));
+            else{
+                res.send(ErrorObj.sendErrorResponse(404,"Application Name not found"));
+            }
         }
-        else{
-            res.send(ErrorObj.sendErrorResponse(404,"Application Name not found"));
+        else if(operation == -1)
+        {
+            //delete
+            if(AppID){
+                var deleteStatus = UserORMServices.deleteApplication(AppID);
+                    deleteStatus
+                    .then(response => {res.status(200).send(response)})
+                    .catch(error => {res.status(400).send(error)})
+            }
+            else{
+                res.send(ErrorObj.sendErrorResponse(404,"ApplicationID not found"));
+            }
+        }
+        else if(operation == 0)
+        {
+            //update
+            if(AppID){
+                if(applicationName){
+                    if(applicationSize){
+                        var appInsertStatus = UserORMServices.updateApplication(AppID,applicationName,applicationSize);
+                        appInsertStatus
+                        .then(response => {res.status(200).send(response)})
+                        .catch(error => {res.status(400).send(error)})
+                    }
+                    else
+                       res.send(ErrorObj.sendErrorResponse(404,"Application Size not found"));
+                }
+                else{
+                    res.send(ErrorObj.sendErrorResponse(404,"Application Name not found"));
+                }
+            }
+            else{
+                res.send(ErrorObj.sendErrorResponse(404,"ApplicationID not found"));
+            }
+        }
+        else
+        {
+            res.send(ErrorObj.sendErrorResponse(404,"Please Provide An Correct Operation-- 0-Update,1-Insert,-1-Delete"));
         }
     }
 }
