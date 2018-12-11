@@ -70,6 +70,22 @@ function saveApplication(database,ApplicationName,ApplicationSize,sequenceID)
         .catch(error => {reject(error)})
     });
 }
+function getAllApplications(database){
+    return new Promise(function(resolve,reject){
+        var collection = database.collection("applications");
+        collection.find({},{_id:0}).toArray(function(err, items){
+            if(err){
+                reject(err);
+            }
+                resolve(items);
+        });
+    });
+    // {
+    //     _id:0,
+    //     appicationName: 1,
+    //     sizeOfApplication:1
+    // }
+}
 function applicationHandler()
 {
     this.insertApplication = function(req,res){
@@ -98,35 +114,85 @@ function applicationHandler()
             .catch(err =>{reject(ErrorObj.sendErrorResponse(500,"Cannot Initialise DB error --"+err));})
         });
     }
-}            
+    this.getAllApplication = function(){
+        return new Promise(function(resolve,reject){
+            var getdb = initialise();
+            getdb
+            .then(database => {
+                    var allApps = getAllApplications(database);
+                    allApps
+                    .then(respose => {resolve(ErrorObj.sendSuccessResponse(200,"Application List Successfully Fetched",respose))})
+                    .catch(error =>{reject(ErrorObj.sendErrorResponse(500,"Some Problem Fetching Applications error is-"+error))})
+            })
+            .catch(err =>{reject(ErrorObj.sendErrorResponse(500,"Cannot Initialise DB error --"+err));})
+        });
+    }
+}
+function getPerticularUserDetails(database,userName)
+{
+    return new Promise(function(resolve,reject){
+        var collection = database.collection("users");
+        collection.find({username:userName}).toArray(function(err, items){
+            if(err){
+                reject(ErrorObj.sendErrorResponse(500,"Error in Making User "+err));
+            }
+            if(items.length > 0){
+                resolve(items);
+            }
+            else
+            {
+                reject(ErrorObj.sendErrorResponse(404,"User Already Exists"));
+            }
+        });
+    });
+} 
+function createUser(database,userName,Password){
+    return new Promise(function(resolve,reject){
+        var collection = database.collection("users");
+        collection.insertOne(
+            {
+                username: userName,
+                password:Password
+            }
+        )
+        .then(result=>{resolve(result);})
+        .catch(error => {reject(error)})
+    });
+}
 function userTable()
 {
     const createToken = () => {
         return jwt.sign({}, 'secret', { expiresIn: '1h' });
     };
-    this.signup = function(req,res){
-        var db = require('../controller/db').getDb().db();
-        var uname = req.body.username;
-        var password = req.body.password;
-        db.collection("users").find({username:uname}).toArray(function(err, response) {
-            if (err) res.send(ErrorObj.sendErrorResponse(400,"SomeProblem Occured"));
-            else{
-                if(response.length>0)
-                {
-                    res.send(ErrorObj.sendErrorResponse(400,"User Already Exists"));
-                }
-                else
-                {
-                    db.collection("users").insertOne({"username":uname,"password":password})
-                    .then(result => { res.send(ErrorObj.sendSuccessResponse(200,"User Made Successfully",{id:result.insertedId,access_token:createToken()}))})
-                    .catch(err => {
-                        res.send(ErrorObj.sendErrorResponse(500,"Something Went Wrong -error---"+err));
-                      });
-                }
-               
-            }
-             
-          });
+    this.signup = function(userName,Password){
+        return new Promise(function(resolve,reject){
+            var getdb = initialise();
+            getdb
+            .then(databaseObj => {
+                var userDetail = getPerticularUserDetails(databaseObj,userName);
+                userDetail
+                .then(respose => {
+                    //User is there
+                    reject(ErrorObj.sendErrorResponse(404,"User Already Exists"));
+                })
+                .catch(error => {
+                    if(error.statusCode)
+                    {
+                        //User is not there
+                        var userCreationstatus = createUser(databaseObj,userName,Password);
+                        userCreationstatus
+                        .then(response => {console.log(response); resolve(ErrorObj.sendSuccessResponse(200,"User Created Successfully-- ",{userid:response.insertedId,access_token:createToken()}))})
+                        .catch(error => {reject(ErrorObj.sendErrorResponse(500,"Error in making USER -- "+error))})
+                    }
+                    else
+                    {
+                        console.log(error);
+                        reject(ErrorObj.sendErrorResponse(500,"Error in making USER -- "+error.message));
+                    }
+                })
+            })
+            .catch(err =>{reject(ErrorObj.sendErrorResponse(500,"Cannot Initialise DB error --"+err));})
+        });
     }
 }
 

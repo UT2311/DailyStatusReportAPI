@@ -5,7 +5,10 @@ var ErrorObj = require('../controller/ErrorHandler');
 function userServices()
 {
     this.getAllApplication = function(req,res){
-        res.send("I got the application");
+        var allApplications = UserORMServices.getAllApplication();
+        allApplications
+            .then(response => {res.status(200).send(response)})
+            .catch(error => {res.status(400).send(error)})
     }
     this.insertApplication = function(req,res){
         var applicationName = req.body.ApplicationName;

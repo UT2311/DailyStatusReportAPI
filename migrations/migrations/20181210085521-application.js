@@ -23,6 +23,7 @@ module.exports = {
          }
       }
    });
+   db.collection("applications").createIndex({appicationName:1,sizeOfApplication:1},{unique:true})
    return conn;
   },
 
@@ -30,6 +31,7 @@ module.exports = {
     // TODO write the statements to rollback your migration (if possible)
     // Example:
     // return db.collection('albums').updateOne({artist: 'The Beatles'}, {$set: {blacklisted: false}});
+    db.collection("applications").dropIndex("applications");
     return db.collection('applications').drop();
   }
 };
