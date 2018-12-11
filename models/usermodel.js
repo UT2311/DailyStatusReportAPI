@@ -24,17 +24,22 @@ function createCounter(database,counterID)
 }
 function makeCounterIfUnavalable(database,counterID){
     return new Promise(function(resolve, reject) {
-       var collection =  database.collection("counter");
-       collection.find({"_id":counterID}).toArray(function(err, items){
-            if (err) {
+        var collection =  database.collection("counter");
+        collection.find({_id:counterID}).toArray(function(err, items){
+            if(err){
                 reject(err);
-            } else {
+            }
+            if(items.length > 0){
+                resolve(items);
+            }
+            else
+            {
                 var counterCreated = createCounter(database,counterID);
-                counterCreated.then(function(result){
-                    resolve(items);
-                })
-          } 
-       });
+                    counterCreated.then(function(result){
+                        resolve(items);
+                    })
+            }
+        });
     });
      
 }
@@ -65,7 +70,35 @@ function saveApplication(database,ApplicationName,ApplicationSize,sequenceID)
         .catch(error => {reject(error)})
     });
 }
-            
+function applicationHandler()
+{
+    this.insertApplication = function(req,res){
+        return new Promise(function(resolve,reject){
+            var getdb = initialise();
+            getdb
+            .then(result => {
+                    var applicationName = req.body.ApplicationName;
+                    var applicationSize = req.body.ApplicationSize;  
+                    var counterInitialise = makeCounterIfUnavalable(result,"applications_id");
+                    counterInitialise
+                    .then(respose => {
+                        var sequenceID = getNextSequenceValue(result,"applications_id");
+                        sequenceID
+                        .then(sequenceDoc => {
+                            var getSavedStatus = saveApplication(result,applicationName,applicationSize,(sequenceDoc.value.count+1));
+                            getSavedStatus
+                            .then(savedResponse => {resolve(ErrorObj.sendSuccessResponse(200,"Application Saved Successfully",savedResponse.insertedId))})
+                            .catch(errorResponse => {reject(ErrorObj.sendErrorResponse(200,"Application Failed To Save "+errorResponse))})
+                        })
+                        .catch(err => {reject(ErrorObj.sendErrorResponse(400,"Cannot insert the application error is ---"+err));})
+                    })
+                    .catch(err => {reject(ErrorObj.sendErrorResponse(400,"Cannot make counter for the perticular application error--"+err));})
+    
+            })
+            .catch(err =>{reject(ErrorObj.sendErrorResponse(500,"Cannot Initialise DB error --"+err));})
+        });
+    }
+}            
 function userTable()
 {
     const createToken = () => {
@@ -95,32 +128,11 @@ function userTable()
              
           });
     }
-    this.insertApplication = function(req,res){
-        var getdb = initialise();
-        getdb
-        .then(result => {
-                var applicationName = req.body.ApplicationName;
-                var applicationSize = req.body.ApplicationSize;  
-                var counterInitialise = makeCounterIfUnavalable(result,"applications_id");
-                counterInitialise
-                .then(respose => {
-                    var sequenceID = getNextSequenceValue(result,"applications_id");
-                    sequenceID
-                    .then(sequenceDoc => {
-                        var getSavedStatus = saveApplication(result,applicationName,applicationSize,(sequenceDoc.value.count+1));
-                        getSavedStatus
-                        .then(savedResponse => {res.send(ErrorObj.sendSuccessResponse(200,"Application Saved Successfully",savedResponse.insertedId))})
-                        .catch(errorResponse => {res.send(ErrorObj.sendErrorResponse(200,"Application Failed To Save "+errorResponse))})
-                    })
-                    .catch(err => {res.send(ErrorObj.sendErrorResponse(400,"Cannot insert the application error is ---"+err));})
-                })
-                .catch(err => {res.send(ErrorObj.sendErrorResponse(400,"Cannot make counter for the perticular application error--"+err));})
-
-        })
-        .catch(err =>{res.send(ErrorObj.sendErrorResponse(500,"Cannot Initialise DB error --"+err));})
-       
-    }
 }
 
 var userTable = new userTable();
-module.exports = userTable;
+var applicationHandle = new applicationHandler();
+module.exports = {
+    userTable,
+    applicationHandle
+};

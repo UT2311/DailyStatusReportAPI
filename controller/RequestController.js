@@ -12,7 +12,10 @@ function userServices()
         var applicationSize = req.body.ApplicationSize;
         if(applicationName){
             if(applicationSize){
-                UserORMServices.insertApplication(req,res);
+                var appInsertStatus = UserORMServices.insertApplication(req,res);
+                appInsertStatus
+                .then(response => {res.status(200).send(response)})
+                .catch(error => {res.status(400).send(error)})
             }
             else
                res.send(ErrorObj.sendErrorResponse(404,"Application Size not found"));
