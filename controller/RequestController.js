@@ -113,6 +113,70 @@ function userServices()
         else
              res.send(ErrorObj.sendErrorResponse(404,"Please Provide Operation to do -- 0-Update 1-Insert -1-Delete"));
     }
+    this.insertDBLinks = function(req,res){
+        var dbName = req.body.databaseName;
+        var linkToDB = req.body.dbLink;
+        var operations = req.body.options;
+        var linkID = req.body.linkID;
+        if(operations){
+            if(operations == -1){
+                if(linkID){
+                    var deleteStatus = UserORMServices.deleteLinkDB(linkID);
+                    deleteStatus
+                    .then(response => {res.status(200).send(response)})
+                    .catch(error => {res.status(400).send(error)})
+                }
+                else{
+                    res.send(ErrorObj.sendErrorResponse(400,"Please provide the linkID to Delete"));    
+                }
+            }
+            else if(operations == 0){
+                if(linkID){
+                    if(dbName){
+                        if(linkToDB){
+                            var updateStatus = UserORMServices.updateLinkDB(linkID,dbName,linkToDB);
+                            updateStatus
+                            .then(response => {res.status(200).send(response)})
+                            .catch(error => {res.status(400).send(error)})
+                        }
+                    }
+                }
+                else
+                {
+                    res.send(ErrorObj.sendErrorResponse(400,"Please provide the linkID to Update"));    
+                }
+            }
+            else if(operations == 1){
+                if(dbName){
+                    if(linkToDB){
+                        var linkStatus = UserORMServices.addLinkDB(dbName,linkToDB);
+                        linkStatus
+                        .then(response => {res.status(200).send(response)})
+                        .catch(error => {res.status(400).send(error)})
+                    }
+                    else{
+                        res.send(ErrorObj.sendErrorResponse(400,"Please provide the link to assign"));    
+                    }
+                }
+                else
+                    res.send(ErrorObj.sendErrorResponse(400,"Please provide the database name to assign the link")); 
+            }
+            else{
+                res.send(ErrorObj.sendErrorResponse(400,"Please provide Operation to do -- 0-Update 1-Insert -1-Delete"));
+            }
+        }
+        else
+        {
+            res.send(ErrorObj.sendErrorResponse(400,"Please provide Operation to do -- 0-Update 1-Insert -1-Delete"));
+        }
+        
+    }
+    this.getallDBLinks = function(req,res){
+        var allDBlinks = UserORMServices.getallDBLinks();
+        allDBlinks
+            .then(response => {res.status(200).send(response)})
+            .catch(error => {res.status(400).send(error)})
+    }
 }
 var userObj = new userServices();
 module.exports = userObj;

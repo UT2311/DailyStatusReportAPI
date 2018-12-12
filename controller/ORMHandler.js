@@ -2,7 +2,8 @@ var ErrorObj = require('../controller/ErrorHandler');
 var userModel  = require('../models/usermodel');
 var userfunctions = userModel.userTable;
 var applicationFunctions = userModel.applicationHandle;
-
+var assistiveTech = userModel.assistiveTech;
+var linkDBObj = userModel.linkDb;
 
 function userORMServices()
 {
@@ -49,7 +50,7 @@ function userORMServices()
     }
     this.deleteAT = function(assistiveTechnologyID){
         return new Promise(function(resolve,reject){
-            var deleteATStatus = applicationFunctions.deleteAT(assistiveTechnologyID);
+            var deleteATStatus = assistiveTech.deleteAT(assistiveTechnologyID);
             deleteATStatus
             .then(response => {resolve(response)})
             .catch(error => {reject(error)})
@@ -57,7 +58,7 @@ function userORMServices()
     }
     this.updateAT = function(assistiveTechnologyID,assistiveTechnology){
         return new Promise(function(resolve,reject){
-            var updateATStatus = applicationFunctions.updateAT(assistiveTechnologyID,assistiveTechnology);
+            var updateATStatus = assistiveTech.updateAT(assistiveTechnologyID,assistiveTechnology);
             updateATStatus
             .then(response => {resolve(response)})
             .catch(error => {reject(error)})
@@ -65,11 +66,43 @@ function userORMServices()
     }
     this.insertAT = function(assistiveTechnology){
         return new Promise(function(resolve,reject){
-            var insertATStatus = applicationFunctions.insertAT(assistiveTechnology);
+            var insertATStatus = assistiveTech.insertAT(assistiveTechnology);
             insertATStatus
             .then(response => {resolve(response)})
             .catch(error => {reject(error)})
         });
+    }
+    this.addLinkDB = function(dbName,linkToDB){
+        return new Promise(function(resolve,reject){
+            var insertdbLink = linkDBObj.addLinkDB(dbName,linkToDB);
+            insertdbLink
+            .then(response => {resolve(response)})
+            .catch(error => {reject(error)})
+        });
+    }
+    this.deleteLinkDB = function(linkID){
+        return new Promise(function(resolve,reject){
+            var deleteLinkDB = linkDBObj.deleteLinkDB(linkID);
+            deleteLinkDB
+            .then(response => {resolve(response)})
+            .catch(error => {reject(error)})
+        });
+    }
+    this.updateLinkDB = function(linkID,dbName,linkToDB){
+        return new Promise(function(resolve,reject){
+            var updateLinkDB = linkDBObj.updateLinkDB(linkID,dbName,linkToDB);
+            updateLinkDB
+            .then(response => {resolve(response)})
+            .catch(error => {reject(error)})
+        });
+    }
+    this.getallDBLinks = function(){
+        return new Promise(function(resolve,reject){
+            var getallDBLinks = linkDBObj.getallDBLinks();
+            getallDBLinks
+            .then(response => {resolve(response)})
+            .catch(error => {reject(error)})
+        }); 
     }
 }
 

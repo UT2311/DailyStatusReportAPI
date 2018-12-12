@@ -14,7 +14,7 @@ function initialise()
     })
 }
 
-//Application Functions
+//caller functions
 function createCounter(database,counterID)
 {
     return new Promise(function(resolve, reject) {
@@ -178,6 +178,67 @@ function insertAT(database,sequenceID,assistiveTechnology){
         .catch(error => {reject(error)})
     });
 }
+function addLinkDB(database,sequenceID,dbName,linkToDB){
+    return new Promise(function(resolve,reject){
+
+        var collection = database.collection("databaselinks");
+        AppID = parseInt(sequenceID);
+        collection.insertOne(
+           {
+                _id:AppID,
+                nameDB:dbName,
+                link:linkToDB
+           }
+        )
+        .then(result=>{resolve(result);})
+        .catch(error => {reject(error)})
+    });
+}
+function deleteLinkDB(database,linkID){
+    return new Promise(function(resolve,reject){
+        var collection = database.collection("databaselinks");
+        console.log("here"+linkID);
+        AppID = parseInt(linkID);
+       
+        collection.deleteOne(
+            {_id:AppID}
+        )
+        .then(result=>{resolve(result);})
+        .catch(error => {reject(error)})
+    });
+}
+function updateLinkDB(database,linkID,dbName,linkToDB){
+    return new Promise(function(resolve,reject){
+        var collection = database.collection("databaselinks");
+        AppID = parseInt(linkID);
+        collection.findOneAndUpdate(
+            {_id:AppID},
+            {
+                $set:{
+                    nameDB:dbName,
+                    link:linkToDB
+                }
+            },
+            {
+                returnNewDocument: true
+            }
+        )
+        .then(result=>{resolve(result);})
+        .catch(error => {reject(error)})
+    });
+}
+function getallDBLinks(database){
+    return new Promise(function(resolve,reject){
+        var collection = database.collection("databaselinks");
+        collection.find({},{_id:0}).toArray(function(err, items){
+            if(err){
+                reject(err);
+            }
+                resolve(items);
+        });
+    });
+}
+
 
 //Application Handler
 function applicationHandler()
@@ -252,6 +313,10 @@ function applicationHandler()
             .catch(err =>{reject(ErrorObj.sendErrorResponse(500,"Cannot Initialise DB error --"+err));})
         });
     }
+}
+/* Assistive technology handler */
+function assistiveTechHandler(){
+
     this.deleteAT = function(assistiveTechnologyID){
         return new Promise(function(resolve,reject){
             var getdb = initialise();
@@ -302,6 +367,78 @@ function applicationHandler()
                         .catch(err => {reject(ErrorObj.sendErrorResponse(400,"Cannot insert the application error is ---"+err));})
                     })
                     .catch(err => {reject(ErrorObj.sendErrorResponse(400,"Cannot make counter for the perticular application error--"+err));})
+            })
+            .catch(err =>{reject(ErrorObj.sendErrorResponse(500,"Cannot Initialise DB error --"+err));})
+        });
+    }
+
+}
+// database link handler
+function linkDBHandler(){
+
+    this.addLinkDB = function(dbName,linkToDB){
+        return new Promise(function(resolve,reject){
+            var getdb = initialise();
+            getdb
+            .then(database => {
+                var counterInitialise = makeCounterIfUnavalable(database,"databaselinks");
+                    counterInitialise
+                    .then(respose => {
+                        var sequenceID = getNextSequenceValue(database,"databaselinks");
+                        sequenceID
+                        .then(sequenceDoc => {
+                            var getSavedStatus = addLinkDB(database,(sequenceDoc.value.count+1),dbName,linkToDB);
+                            getSavedStatus
+                            .then(savedResponse => {resolve(ErrorObj.sendSuccessResponse(200,"Link Saved Successfully",savedResponse.insertedId))})
+                            .catch(errorResponse => {
+                                var counterResetStatus = resetSequenceValue(database,"databaselinks");
+                                counterResetStatus
+                                .then(response => {reject(ErrorObj.sendErrorResponse(400,"Link Failed To Save "+errorResponse))})
+                                .catch(error => {reject(ErrorObj.sendErrorResponse(400,"Link Failed To Save & Counter Failed to decrement "+errorResponse))})
+                                })
+                        })
+                        .catch(err => {reject(ErrorObj.sendErrorResponse(400,"Cannot insert the Link error is ---"+err));})
+                    })
+                    .catch(err => {reject(ErrorObj.sendErrorResponse(400,"Cannot make counter for the perticular Link error--"+err));})
+            })
+            .catch(err =>{reject(ErrorObj.sendErrorResponse(500,"Cannot Initialise DB error --"+err));})
+        });
+    }
+    this.deleteLinkDB = function(linkID){
+        return new Promise(function(resolve,reject){
+            var getdb = initialise();
+            getdb
+            .then(database => {
+                var deleteATStatus = deleteLinkDB(database,linkID);
+                deleteATStatus
+                .then(response => {resolve(ErrorObj.sendSuccessResponse(200,"Link deleted",response))})
+                .catch(error =>{reject(ErrorObj.sendErrorResponse(500,"Link Cannot Be Deleted",error))})
+            })
+            .catch(err =>{reject(ErrorObj.sendErrorResponse(500,"Cannot Initialise DB error --"+err));})
+        });
+    }
+    this.updateLinkDB = function(linkID,dbName,linkToDB){
+        return new Promise(function(resolve,reject){
+            var getdb = initialise();
+            getdb
+            .then(database => {
+                var deleteATStatus = updateLinkDB(database,linkID,dbName,linkToDB);
+                deleteATStatus
+                .then(response => {resolve(ErrorObj.sendSuccessResponse(200,"Link Updated",response))})
+                .catch(error =>{reject(ErrorObj.sendErrorResponse(500,"Link Cannot Be Updated",error))})
+            })
+            .catch(err =>{reject(ErrorObj.sendErrorResponse(500,"Cannot Initialise DB error --"+err));})
+        });
+    }
+    this.getallDBLinks = function(){
+        return new Promise(function(resolve,reject){
+            var getdb = initialise();
+            getdb
+            .then(database => {
+                    var allDBs = getallDBLinks(database);
+                    allDBs
+                    .then(respose => {resolve(ErrorObj.sendSuccessResponse(200,"Link List Successfully Fetched",respose))})
+                    .catch(error =>{reject(ErrorObj.sendErrorResponse(500,"Some Problem Fetching Links error is-"+error))})
             })
             .catch(err =>{reject(ErrorObj.sendErrorResponse(500,"Cannot Initialise DB error --"+err));})
         });
@@ -383,7 +520,12 @@ function userTable()
 
 var userTable = new userTable();
 var applicationHandle = new applicationHandler();
+var assistiveTech = new assistiveTechHandler();
+var linkDb = new linkDBHandler();
+
 module.exports = {
     userTable,
-    applicationHandle
+    applicationHandle,
+    assistiveTech,
+    linkDb
 };

@@ -12,4 +12,7 @@ router.post("/signup",apiController.signup);
 router.get("/getAllApplications",userAuthenticator,requestController.getAllApplication);
 router.post("/insertDeleteUpdateApplication",userAuthenticator,requestController.insertApplication);
 router.post("/insertDeleteUpdateAssistiveTechnology",userAuthenticator,requestController.insertDeleteUpdateATS);
+router.post("/insertDeleteUpdateDBLinks",userAuthenticator,requestController.insertDBLinks);
+router.get("/getallDBLinks",userAuthenticator,requestController.getallDBLinks);
+
 module.exports = router;
